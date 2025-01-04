@@ -2,9 +2,9 @@ package me.cher1shrxd.cardeaseserver.domain.auth.service;
 
 import lombok.RequiredArgsConstructor;
 
-import me.cher1shrxd.cardeaseserver.domain.auth.dto.request.LoginRequest;
-import me.cher1shrxd.cardeaseserver.domain.auth.dto.request.ReissueRequest;
-import me.cher1shrxd.cardeaseserver.domain.auth.dto.request.SignupRequest;
+import me.cher1shrxd.cardeaseserver.domain.auth.dto.request.Login;
+import me.cher1shrxd.cardeaseserver.domain.auth.dto.request.Reissue;
+import me.cher1shrxd.cardeaseserver.domain.auth.dto.request.Signup;
 import me.cher1shrxd.cardeaseserver.domain.auth.repository.RefreshTokenRepository;
 import me.cher1shrxd.cardeaseserver.domain.user.entity.UserEntity;
 import me.cher1shrxd.cardeaseserver.domain.user.enums.UserRole;
@@ -25,30 +25,34 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final RefreshTokenRepository refreshTokenRepository;
 
-    public void signup(SignupRequest signupRequest) {
-        String hashedPassword = bCryptPasswordEncoder.encode(signupRequest.password());
+    public void signup(Signup signup) {
+        String hashedPassword = bCryptPasswordEncoder.encode(signup.password());
 
-        if(userRepository.existsByUsername(signupRequest.username())) {
+        if(userRepository.existsByUsername(signup.username())) {
             throw new CustomException(CustomErrorCode.USERNAME_DUPLICATION);
         }
 
-        if(userRepository.existsByEmail(signupRequest.email())) {
+        if(userRepository.existsByEmail(signup.email())) {
             throw new CustomException(CustomErrorCode.EMAIL_DUPLICATION);
         }
 
         UserEntity userEntity = UserEntity.builder()
-                .username(signupRequest.username())
-                .email(signupRequest.email())
+                .username(signup.username())
+                .email(signup.email())
                 .password(hashedPassword)
+                .introduce(signup.introduce())
+                .tel(signup.tel())
+                .company(signup.company())
+                .job(signup.job())
                 .role(UserRole.USER)
                 .build();
 
         userRepository.save(userEntity);
     }
 
-    public JwtResponse login(LoginRequest loginRequest) {
-        String email = loginRequest.email();
-        String password = loginRequest.password();
+    public JwtResponse login(Login login) {
+        String email = login.email();
+        String password = login.password();
 
         UserEntity userEntity = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(CustomErrorCode.USER_NOT_FOUND));
@@ -63,8 +67,8 @@ public class AuthService {
         return token;
     }
 
-    public JwtResponse reissue(ReissueRequest reissueRequest) {
-        String refreshToken = reissueRequest.refreshToken();
+    public JwtResponse reissue(Reissue reissue) {
+        String refreshToken = reissue.refreshToken();
 
         if (jwtProvider.getType(refreshToken) != JwtType.REFRESH)
             throw new CustomException(CustomErrorCode.INVALID_TOKEN_TYPE);

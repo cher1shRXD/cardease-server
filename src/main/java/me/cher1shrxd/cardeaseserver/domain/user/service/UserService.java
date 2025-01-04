@@ -1,8 +1,8 @@
 package me.cher1shrxd.cardeaseserver.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
-import me.cher1shrxd.cardeaseserver.domain.user.dto.request.UpdateRequest;
-import me.cher1shrxd.cardeaseserver.domain.user.dto.response.UserResponse;
+import me.cher1shrxd.cardeaseserver.domain.user.dto.request.Update;
+import me.cher1shrxd.cardeaseserver.domain.user.dto.response.User;
 import me.cher1shrxd.cardeaseserver.domain.user.entity.UserEntity;
 import me.cher1shrxd.cardeaseserver.domain.user.repository.UserRepository;
 import me.cher1shrxd.cardeaseserver.global.exception.CustomErrorCode;
@@ -17,33 +17,35 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    public UserResponse getMe() {
+    public User getMe() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         System.out.println(email);
 
         UserEntity userEntity = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(CustomErrorCode.USER_NOT_FOUND));
 
-        return new UserResponse(userEntity.getId(), userEntity.getUsername(), userEntity.getEmail(), userEntity.getRole());
+        return new User(userEntity.getId(), userEntity.getUsername(), userEntity.getEmail(), userEntity.getIntroduce(), userEntity.getTel(), userEntity.getCompany(), userEntity.getJob(), userEntity.getRole());
     }
 
-    public UserResponse updateMe(UpdateRequest updateRequest) {
+    public User updateMe(Update update) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         UserEntity userEntity = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(CustomErrorCode.USER_NOT_FOUND));
 
-        if(updateRequest.currentPassword() == null || !bCryptPasswordEncoder.matches(updateRequest.currentPassword(), userEntity.getPassword())) {
+        if(update.currentPassword() == null || !bCryptPasswordEncoder.matches(update.currentPassword(), userEntity.getPassword())) {
             throw new CustomException(CustomErrorCode.WRONG_PASSWORD);
         }
 
-        if (updateRequest.username() != null) userEntity.setUsername(updateRequest.username());
-        if (updateRequest.password() != null) {
-            String hashedPassword = bCryptPasswordEncoder.encode(updateRequest.password());
+        if (update.username() != null) userEntity.setUsername(update.username());
+        if(update.tel() != null) userEntity.setTel(update.tel());
+        if(update.company() != null) userEntity.setCompany(update.company());
+        if(update.job() != null) userEntity.setJob(update.job());
+        if (update.password() != null) {
+            String hashedPassword = bCryptPasswordEncoder.encode(update.password());
             userEntity.setPassword(hashedPassword);
         }
 
         userRepository.save(userEntity);
-        System.out.println(userEntity);
 
-        return new UserResponse(userEntity.getId(), userEntity.getUsername(), userEntity.getEmail(), userEntity.getRole());
+        return new User(userEntity.getId(), userEntity.getUsername(), userEntity.getEmail(), userEntity.getIntroduce(), userEntity.getTel(), userEntity.getCompany(), userEntity.getJob(), userEntity.getRole());
     }
 }
